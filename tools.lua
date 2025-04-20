@@ -28,8 +28,9 @@ tools.getColor = function(i)
 	tools.chosenColor = gray;
 	-- beast seals
 	if (string.match(string.lower(i), "beastmen\'s seal") or 
-	string.match(string.lower(i), "kindred\'s seal"))  
-
+	string.match(string.lower(i), "kindred\'s seal"))  or
+	string.match(string.lower(i), " coffer key" ) or
+	string.match(string.lower(i), " chest key" ) 
 	then
 		tools.chosenColor = green;
 	end;
@@ -39,6 +40,12 @@ tools.getColor = function(i)
 		string.match(string.lower(i), "l. jadeshell") 
 	) then
 		tools.chosenColor = gold;
+	end;
+	if (string.match(string.lower(i), "o. bronzepiece") or
+		string.match(string.lower(i), "1 byne bill") or
+		string.match(string.lower(i), "t. whiteshell") 
+	) then
+		tools.chosenColor = purple;
 	end;
 	-- dynamis armor
 	if (string.match(string.lower(i), "warrior\'s") or

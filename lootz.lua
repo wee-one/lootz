@@ -13,9 +13,15 @@ local chat = require('chat');
 
 local defaultConfig = T{
 		scale = 1,
-		showSummary = false,
+		showSummary = true,
 		showPool = true,
-		showPri = false
+		showPri = false,
+		hideCommon = false,
+		pri1Label = '1',
+		pri2Label = '2',
+		pri3Label = 'FL',
+		pri4Label = 'FL',
+		pri5Label = 'FL'
 	};
 
 local config = settings.load(defaultConfig);
@@ -25,6 +31,8 @@ local config = settings.load(defaultConfig);
 local red = {1.0, 0.0, 0.0, 1.0};
 local yellow = {1.0, 1.0, 0.4, 1.0};
 local green = {0.5, 1.0, 0.5, 1.0};
+local purple = {0.7,0.5,1.0,1.0};
+local gray = {1.0, 1.0, 1.0, 0.6};
 
 -- /colors
 
@@ -36,15 +44,14 @@ local checkILen = 0;
 local longestName = '';
 local nLen = 0;
 local checkNLen = 0;
---local str = row;
 local winner = '';
 local lotSep = '';
 local priSep = '';
 local lotMask = '';
 local dev_pri = false;
+local commonCount = 0;
 -- /formatting
 
---local minDropTime = 0;
 
 
 ashita.events.register('load', 'load_cb', function()
@@ -89,18 +96,15 @@ ashita.events.register('d3d_present', 'present_cb', function ()
 		end;
 	end;
 	-- treasure pool window
-	-- to do: remove this from showsummary logic
 	if (table.getn(pool) > 0 and config.showPool) then
 		imgui.SetNextWindowBgAlpha(0.75);
 		imgui.SetNextWindowSize({ windowSize, -1, }, ImGuiCond_Always);
 		
 		if (imgui.Begin('poolWindow', true, bit.bor(ImGuiWindowFlags_NoDecoration))) then
-			-- resize text
-			
+
 			-- testing
 			--imgui.Text(tostring(table.getn(pool)) .. ' ' .. tostring(config.showSummary) .. ' ' .. tostring(config.showPool))
-			-- pool
-			
+
 			imgui.SetWindowFontScale(config.scale)
 			-- table header
 			if table.getn(pool) > 0 then
@@ -167,14 +171,14 @@ ashita.events.register('d3d_present', 'present_cb', function ()
 				end;
 				if tools.prios[v.Name] ~= nil or dev_pri then
 					if priSep ~= '' then
-					imgui.SameLine();
-						if dev_pri then tools.prios[v.Name] = 0 end;
-					
-						if tonumber(tools.prios[v.Name]) > 2 then
-							imgui.Text('FL');
-						else
-							imgui.Text(tostring(tools.prios[v.Name]));
-						end;
+						imgui.SameLine();
+						if dev_pri and tools.prios[v.Name] == nil then tools.prios[v.Name] = 0 end;
+						--imgui.Text(tostring(tools.prios[v.Name]) .. ' ' .. tostring(math.abs(mins-5)));
+						if tonumber(tools.prios[v.Name]) == 1 then imgui.Text(config.pri1Label) end;
+						if tonumber(tools.prios[v.Name]) == 2 then imgui.Text(config.pri2Label) end;
+						if tonumber(tools.prios[v.Name]) == 3 then imgui.Text(config.pri3Label) end;
+						if tonumber(tools.prios[v.Name]) == 4 then imgui.Text(config.pri4Label) end;
+						if tonumber(tools.prios[v.Name]) >= 5 then imgui.Text(config.pri5Label) end;
 					end;
 					if v.item.WinningLot == 0 and math.abs(mins-5) > tools.prios[v.Name] then
 						tools.prios[v.Name] = math.abs(mins-5)
@@ -184,6 +188,7 @@ ashita.events.register('d3d_present', 'present_cb', function ()
 			end;
 		end;
 	end;	
+	-- history window
 	if config.showSummary and table.getn(tools.dropList) > 0 then
 		imgui.SetNextWindowBgAlpha(0.75);
 		imgui.SetNextWindowSize({ windowSize, -1, }, ImGuiCond_Always);
@@ -191,16 +196,34 @@ ashita.events.register('d3d_present', 'present_cb', function ()
 			imgui.SetWindowFontScale(config.scale)
 			-- summary
 			longestSummary = string.len(longestItem) > string.len(longestSummary) and longestItem or longestSummary; 
-			imgui.Separator();
-			imgui.Text('Loot Pool History:');
-			imgui.Separator();
+				imgui.Separator();
+				imgui.Text('Loot Pool History:');
+				imgui.Separator();
+
 			table.sort(tools.dropList);
 			for i, v in pairs(tools.dropList) do
-				imgui.TextColored(tools.getColor(v),v)
-				--imgui.Text(v)
+				-- print(table.concat(tools.getColor(v)))
+				-- print(table.concat(gray))
+				lootColor = tools.getColor(v);
+				if  not config.hideCommon or (config.hideCommon and table.concat(lootColor) ~= table.concat(gray)) then
+
+					imgui.TextColored(tools.getColor(v),v)
+					imgui.SameLine();
+					imgui.SetCursorPosX(imgui.CalcTextSize(longestSummary .. ': '));
+					imgui.Text(' : ' ..tostring(tools.dropHistory[v]));
+				end;
+				-- count common
+				if table.concat(lootColor) == table.concat(gray) then
+					commonCount = commonCount+1;
+				end;
+			end;
+			if config.hideCommon then
+				imgui.Separator();
+				imgui.TextColored(gray,'Hidden')
 				imgui.SameLine();
 				imgui.SetCursorPosX(imgui.CalcTextSize(longestSummary .. ': '));
-				imgui.Text(' : ' ..tostring(tools.dropHistory[v]));
+				imgui.Text(' : '  .. tostring(commonCount))
+				commonCount = 0;
 			end;
 		end
 	end
@@ -227,8 +250,14 @@ local function print_help(isError)
         { '/lootz help','Displays the addons help information.' },
 		{ '/lootz scale xx','Sets the scale of the text 0 - 1.' },
 		{ '/lootz showhistory or showsummary','Toggles visibility of treasure pool history. Off by default.' },
-		{ '/lootz shopool','Toggles visibility of loot pool window. On by default.' },
+		{ '/lootz showpool','Toggles visibility of loot pool window. On by default.' },
+		{ '/lootz hidecommon','Toggles visibility of non-colored items in the history.' },
 		{ '/lootz usepri','Shows a priority column in the treasure pool for dynamis gear. Helps with loot rules. 1 > 2 > FL' },
+		{ '/lootz pri1Label','Changes the label for priority 1' },
+		{ '/lootz pri2Label','Changes the label for priority 2' },
+		{ '/lootz pri3Label','Changes the label for priority 3' },
+		{ '/lootz pri4Label','Changes the label for priority 4' },
+		{ '/lootz pri5Label','Changes the label for priority 5' },
 		{ '/lootz reset','Clears the treasure pool history.' },
     };
 
@@ -268,6 +297,12 @@ ashita.events.register('command','command_cb', function (e)
 		settings.save();
         return;
     end
+	if (#args == 2 and args[2]:any('hideCommon')) then
+       config.hideCommon = not config.hideCommon;
+
+		settings.save();
+        return;
+    end
 	if (#args == 2 and (args[2]:any('showsummary') or args[2]:any('showhistory'))) then
        config.showSummary = not config.showSummary
 
@@ -276,6 +311,31 @@ ashita.events.register('command','command_cb', function (e)
     end
 	if (#args == 2 and (args[2]:any('usepri'))) then
        config.showPri = not config.showPri
+		settings.save();
+        return;
+    end
+	if (#args == 3 and (args[2]:any('pri1label'))) then
+       config.pri1Label = args[3];
+		settings.save();
+        return;
+    end
+	if (#args == 3 and (args[2]:any('pri2label'))) then
+       config.pri2Label = args[3];
+		settings.save();
+        return;
+    end
+	if (#args == 3 and (args[2]:any('pri3label'))) then
+       config.pri3Label = args[3];
+		settings.save();
+        return;
+    end
+	if (#args == 3 and (args[2]:any('pri4label'))) then
+       config.pri4Label = args[3];
+		settings.save();
+        return;
+    end
+	if (#args == 3 and (args[2]:any('pri5label'))) then
+       config.pri5Label = args[3];
 		settings.save();
         return;
     end
