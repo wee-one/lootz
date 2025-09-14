@@ -33,6 +33,7 @@ local yellow = {1.0, 1.0, 0.4, 1.0};
 local green = {0.5, 1.0, 0.5, 1.0};
 local purple = {0.7,0.5,1.0,1.0};
 local gray = {1.0, 1.0, 1.0, 0.6};
+local darkRed = {0.651, 0.086, 0.063, 1}
 
 -- /colors
 
@@ -303,7 +304,7 @@ ashita.events.register('command','command_cb', function (e)
 		settings.save();
         return;
     end
-	if (#args == 2 and (args[2]:any('showsummary') or args[2]:any('showhistory'))) then
+	if (#args == 2 and (args[2]:any('showsummary') or args[2]:any('showhistory') or args[2]:any('hist'))) then
        config.showSummary = not config.showSummary
 
 		settings.save();

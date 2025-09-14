@@ -17,6 +17,7 @@ local blue = {0.4,0.7,0.9,1.0};
 local gray = {1.0, 1.0, 1.0, 0.6};
 local purple = {0.7,0.5,1.0,1.0};
 local gold = {0.8,0.6,0.2,1.0};
+local darkRed = {0.78, 0.349, 0.333, 1}
 
 tools.prios = {};
 tools.dropHistory = {}; -- dropHistory[item.name] = dropCount
@@ -74,6 +75,16 @@ tools.getColor = function(i)
 		string.match(string.lower(i), " %-1")
 	) then
 		tools.chosenColor = blue;
+		if tools.prios[i] == nil then
+			tools.prios[i] = 1;
+		end;
+	end;
+	-- tav gear
+	if (string.match(string.lower(i), "hydra") or
+	string.match(string.lower(i), "dream") or
+	string.match(string.lower(i), "dhalmel")
+	) then
+		tools.chosenColor = darkRed;
 		if tools.prios[i] == nil then
 			tools.prios[i] = 1;
 		end;
