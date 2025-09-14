@@ -81,8 +81,7 @@ tools.getColor = function(i)
 	end;
 	-- tav gear
 	if (string.match(string.lower(i), "hydra") or
-	string.match(string.lower(i), "dream") or
-	string.match(string.lower(i), "dhalmel")
+	string.match(string.lower(i), "dream") 
 	) then
 		tools.chosenColor = darkRed;
 		if tools.prios[i] == nil then
